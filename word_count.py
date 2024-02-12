@@ -1,3 +1,10 @@
+
+# Importamos las librerías
+import fileinput
+import glob
+import itertools
+import os
+
 #
 # Escriba la función load_input que recive como parámetro un folder y retorna
 # una lista de tuplas donde el primer elemento de cada tupla es el nombre del
@@ -14,7 +21,19 @@
 #   ]
 #
 def load_input(input_directory):
-    pass
+    # Inicilizamos la lista de resultados
+    result = []
+    # Obtenemos la lista de archivos en el directorio
+    filenames =  glob.glob(input_directory + '/*.*')
+    # Iteramos sobre los archivos
+    with fileinput.input(files=filenames) as f:
+        # Iteramos sobre las lineas de cada archivo
+        for line in f:
+            # Agregamos el nombre del archivo y la linea a la lista de resultados
+            result.append((f.filename(), line.strip()))
+    
+    # Retornamos el resultado
+    return result
 
 
 #
@@ -30,7 +49,11 @@ def load_input(input_directory):
 #   ]
 #
 def mapper(sequence):
-    pass
+    new_sequence = [(word, 1) for _, line in sequence for word in line.split()]
+
+    # Limpiamos las palabras
+    new_sequence = [(word.strip('.,:;!?()[]').lower(), count) for word, count in new_sequence]
+    return new_sequence
 
 
 #
@@ -45,7 +68,11 @@ def mapper(sequence):
 #   ]
 #
 def shuffle_and_sort(sequence):
-    pass
+    sequence = sorted(
+        sequence,
+        key=lambda x: x[0]
+    )
+    return sequence
 
 
 #
@@ -55,7 +82,10 @@ def shuffle_and_sort(sequence):
 # texto.
 #
 def reducer(sequence):
-    pass
+    result = []
+    for key, group in itertools.groupby(sequence, lambda x: x[0]):
+        result.append((key, sum([x[1] for x in group])))
+    return result
 
 
 #
@@ -63,7 +93,10 @@ def reducer(sequence):
 # y lo crea. Si el directorio existe, la función falla.
 #
 def create_ouptput_directory(output_directory):
-    pass
+    if not os.path.exists(output_directory):
+        os.makedirs(output_directory)
+    else:
+        raise Exception('El directorio ya existe')
 
 
 #
@@ -75,7 +108,9 @@ def create_ouptput_directory(output_directory):
 # separados por un tabulador.
 #
 def save_output(output_directory, sequence):
-    pass
+    with open(output_directory + '/part-00000', 'w') as f:
+        for key, value in sequence:
+            f.write(f'{key}\t{value}\n')
 
 
 #
@@ -83,14 +118,25 @@ def save_output(output_directory, sequence):
 # entregado como parámetro.
 #
 def create_marker(output_directory):
-    pass
+    with open(output_directory + '/_SUCCESS', 'w') as f:
+        f.write('')
 
 
 #
 # Escriba la función job, la cual orquesta las funciones anteriores.
 #
 def job(input_directory, output_directory):
-    pass
+    # Leemos los archivos y los procesamos
+    charge_load = load_input(input_directory)
+    mapper_data = mapper(charge_load)
+    shuffle = shuffle_and_sort(mapper_data)
+    reducer_data = reducer(shuffle)
+    # Creamos el directorio de salida
+    create_ouptput_directory(output_directory)
+    # Guardamos el resultado
+    save_output(output_directory, reducer_data)
+    # Creamos el marcador
+    create_marker(output_directory)
 
 
 if __name__ == "__main__":
